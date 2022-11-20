@@ -23,18 +23,14 @@ int main(int argc , char* argv[]) {
     for(int i = 0 ; i < N ; i++) {
         char* line;
         size_t sz = 0;
-        long long num = 0;
         getline(&line , &sz , fp1);
         int cur_ptr = 0 , pt = 0;
         offset_1[i][0] = bytes;
         while(line[cur_ptr] != '\n') {
-            num = num * 10 + (line[cur_ptr] - '0');
             bytes++;
             cur_ptr++;
-            if(line[cur_ptr] == ' ') {
+            if(line[cur_ptr] == ' ') 
                 offset_1[i][++pt] = bytes;
-                num = 0;
-            }
         }
         bytes++;
     }
