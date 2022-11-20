@@ -18,7 +18,7 @@ int main(int argc , char* argv[]) {
     fp1 = fopen(argv[4] , "r");
     fp2 = fopen(argv[5] , "r");
     
-    // Preprocess in1.txt
+    //Preprocess in1.txt
     long long bytes = 0;
     for(int i = 0 ; i < N ; i++) {
         char* line;
@@ -35,11 +35,28 @@ int main(int argc , char* argv[]) {
         bytes++;
     }
 
+    // Preprocess in2.txt
+    bytes = 0;
+    for(int i = 0 ; i < M ; i++) {
+        char* line;
+        size_t sz = 0;
+        getline(&line , &sz , fp2);
+        int cur_ptr = 0 , pt = 0;
+        offset_2[i][0] = bytes;
+        while(line[cur_ptr] != '\n') {
+            bytes++;
+            cur_ptr++;
+            if(line[cur_ptr] == ' ') 
+                offset_2[i][++pt] = bytes;
+        }
+        bytes++;
+    }
+
     long long test;
-    for(int i = 0 ; i < N ; i++) {
-        for(int j = 0 ; j < M ; j++) {
-            fseek(fp1 , offset_1[i][j] , SEEK_SET);
-            fscanf(fp1 , "%lld" , &test);
+    for(int i = 0 ; i < M ; i++) {
+        for(int j = 0 ; j < K ; j++) {
+            fseek(fp2 , offset_2[i][j] , SEEK_SET);
+            fscanf(fp2 , "%lld" , &test);
             printf("%lld " , test);
         }
         printf("\n");
