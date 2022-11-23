@@ -53,8 +53,11 @@ void* read_file(void* args) {
 
 void print_matrix(int N, int M) {
     for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j)
-            printf("%lld ", mat[i][j]);
+        for (int j = 0; j < M; ++j) {
+            printf("%lld", mat[i][j]);
+            if(j != M - 1)
+                printf(" ");
+        }
         printf("\n");
     }
 }
