@@ -48,10 +48,12 @@ void* read_file(void* args) {
     pthread_exit(NULL);
 }
 
-void print_matrix(int N, int M) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j)
-            printf("%lld ", mat[i][j]);
+void print_matrix(int row, int col, ll** mat) {
+    for (int i = 0; i < row; ++i) {
+        for (int j = 0; j < col; ++j)
+            if (j == col - 1)
+                printf("%lld", mat[i][j]);
+            else printf("%lld ", mat[i][j]);
         printf("\n");
     }
 }

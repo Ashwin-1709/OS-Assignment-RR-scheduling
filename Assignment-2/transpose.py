@@ -1,4 +1,3 @@
-import os
 import numpy
 
 matrix = numpy.genfromtxt('in2.txt')
