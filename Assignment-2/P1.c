@@ -4,27 +4,31 @@
 #include <pthread.h>
 #include <stdbool.h>    
 #include <time.h>
+#include <sys/ipc.h> 
+#include <sys/shm.h> 
+#include <assert.h> 
 #define NANO 1E9
 
 typedef long long ll;
-
-int c = 0;
-
-typedef struct {
-    int row_size; // row size
-    int row_from, row_to; // row number
-    char* path; // file path
-    ll* offset; // offset of rows in file
-    ll** mat; // stores current matrix
-} thread_params;
 
 int N, M, K;
 // in1.txt -> N x M 
 // in2.txt -> M x K
 
+typedef struct {
+    int col_cnt; // number of columns in matrix
+    int row_from, row_to; // row number
+    char* path; // file path
+    ll* offset; // offset of rows in file
+    ll* mat; // stores current matrix
+    bool* flag; // set flag after reading the row
+} thread_params;
+
+bool* flag1, * flag2;
+ll* mat1, * mat2;
+
 void pre_process_input(int N, int M, ll* offset, FILE* fp) {
     for (int i = 0; i < N; ++i) {
-        c++;
         char* line;
         size_t sz = 0;
         getline(&line, &sz, fp);
@@ -37,17 +41,19 @@ void pre_process_input(int N, int M, ll* offset, FILE* fp) {
 void* read_file(void* args) {
     thread_params* P = (thread_params*)args;
     int start = P->row_from, end = P->row_to;
-    int M = P->row_size;
+    int M = P->col_cnt;
+    bool* flag = P->flag;
     FILE* fp = fopen(P->path, "r");
     ll* offset = P->offset;
-    ll** mat = P->mat;
+    ll* mat = P->mat;
 
     for (int i = start; i <= end; ++i) {
         fseek(fp, offset[i], SEEK_SET);
-        for (int j = 0; j < M; ++j) {
-            fscanf(fp, "%lld", &mat[i][j]);
-        }
+        for (int j = 0; j < M; ++j)
+            fscanf(fp, "%lld", &mat[i * M + j]);
+        flag[i] = true;
     }
+
     fclose(fp);
     pthread_exit(NULL);
 }
@@ -75,55 +81,55 @@ int main(int argc, char* argv[]) {
     FILE* fp2 = fopen(argv[5], "r");
     int MAX_THREADS = atoi(argv[7]);
 
-    struct timespec start_read, end_read;
-
     ll* offset_1 = malloc(N * sizeof(ll));
     ll* offset_2 = malloc(K * sizeof(ll));
+    
+    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666 | IPC_CREAT);
+    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 | IPC_CREAT);
+    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 | IPC_CREAT);
+    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 | IPC_CREAT);
 
-    ll** mat_1 = (ll**)malloc(N * sizeof(ll*));
-    for (int i = 0; i < N; ++i)
-        mat_1[i] = (ll*)malloc(M * sizeof(ll));
+    //printf("%d %d %d %d\n" , mat1_id , mat2_id , flag1_id , flag2_id);
 
-    ll** mat_2 = (ll**)malloc(K * sizeof(ll*));
-    for (int i = 0; i < K; ++i)
-        mat_2[i] = (ll*)malloc(M * sizeof(ll));
+    // Attatching ids
+    mat1 = shmat(mat1_id , NULL , 0);
+    mat2 = shmat(mat2_id , NULL , 0);
+    flag1 = shmat(flag1_id , NULL , 0);
+    flag2 = shmat(flag2_id , NULL , 0);
 
     // Preprocess in1.txt
     pre_process_input(N, M, offset_1, fp1);
     // Preprocess in2.txt
     pre_process_input(K, M, offset_2, fp2);
 
-    if(MAX_THREADS == 1) { // Sequential Read 
-        pthread_t thread;
-        clock_gettime(CLOCK_REALTIME, &start_read);
+    struct timespec start_read, end_read;
+    pthread_t threads[MAX_THREADS];
+
+    clock_gettime(CLOCK_REALTIME, &start_read);
+    if (MAX_THREADS == 1) { // Sequential Read 
         thread_params* cur = (thread_params*)(malloc(sizeof(thread_params)));
         cur->offset = offset_1;
         cur->path = argv[4];
         cur->row_from = 0;
         cur->row_to = N - 1;
-        cur->row_size = M;
-        cur->mat = mat_1;
-        pthread_create(&thread, NULL, read_file, (void*)cur);
-        pthread_join(thread , NULL);
+        cur->col_cnt = M;
+        cur->mat = mat1;
+        cur->flag = flag1;
+        pthread_create(&threads[0], NULL, read_file, (void*)cur);
+        pthread_join(threads[0], NULL);
 
         cur->offset = offset_2;
         cur->path = argv[5];
         cur->row_from = 0;
         cur->row_to = K - 1;
-        cur->row_size = M;
-        cur->mat = mat_2;
+        cur->col_cnt = M;
+        cur->mat = mat2;
+        cur->flag = flag2;
 
-        pthread_create(&thread, NULL, read_file, (void*)cur);
-        pthread_join(thread , NULL);
-        clock_gettime(CLOCK_REALTIME, &end_read);
-
-        double time_taken = ( end_read.tv_sec - start_read.tv_sec ) + ( end_read.tv_nsec - start_read.tv_nsec ) / NANO;
-        time_taken *= NANO;
-        printf("Time taken for %d threads | %lf\n seconds" , MAX_THREADS * 2 , time_taken);
-    }  else {
+        pthread_create(&threads[0], NULL, read_file, (void*)cur);
+        pthread_join(threads[0], NULL);
+    } else {
         int MAX_THREADS1 = MAX_THREADS / 2;
-        pthread_t threads[MAX_THREADS1];
-        clock_gettime(CLOCK_REALTIME, &start_read);
         for (int i = 0; i < MAX_THREADS1; ++i) {
             thread_params* cur = (thread_params*)(malloc(sizeof(thread_params)));
 
@@ -132,14 +138,14 @@ int main(int argc, char* argv[]) {
             cur->row_from = i * N / MAX_THREADS1;
             cur->row_to = (i + 1) * N / MAX_THREADS1 - 1;
             if (i == MAX_THREADS1 - 1) cur->row_to = N - 1;
-            cur->row_size = M;
-            cur->mat = mat_1;
+            cur->col_cnt = M;
+            cur->mat = mat1;
+            cur->flag = flag1;
 
             pthread_create(&threads[i], NULL, read_file, (void*)cur);
         }
 
         int MAX_THREADS2 = MAX_THREADS - MAX_THREADS1;
-        pthread_t threads_2[MAX_THREADS2];
         for (int i = 0; i < MAX_THREADS2; ++i) {
             thread_params* cur = (thread_params*)(malloc(sizeof(thread_params)));
 
@@ -148,20 +154,25 @@ int main(int argc, char* argv[]) {
             cur->row_from = i * K / MAX_THREADS2;
             cur->row_to = (i + 1) * K / MAX_THREADS2 - 1;
             if (i == MAX_THREADS2 - 1) cur->row_to = K - 1;
-            cur->row_size = M;
-            cur->mat = mat_2;
+            cur->col_cnt = M;
+            cur->mat = mat2;
+            cur->flag = flag2;
 
-            pthread_create(&threads_2[i], NULL, read_file, (void*)cur);
+            pthread_create(&threads[i + MAX_THREADS1], NULL, read_file, (void*)cur);
         }
-
-        for(int i = 0 ; i < MAX_THREADS1 ; i++)
-            pthread_join(threads[i] , NULL);
-        for(int i = 0 ; i < MAX_THREADS2 ; i++)
-            pthread_join(threads_2[i] , NULL);
-
-        clock_gettime(CLOCK_REALTIME, &end_read);
-        double time_taken = ( end_read.tv_sec - start_read.tv_sec ) + ( end_read.tv_nsec - start_read.tv_nsec ) / NANO;
-        time_taken *= NANO;
-        printf("Time taken for %d threads | %lf seconds\n" , MAX_THREADS , time_taken);
     }
+
+    for (int i = 0; i < MAX_THREADS; ++i)
+        pthread_join(threads[i], NULL);
+    clock_gettime(CLOCK_REALTIME, &end_read);
+
+    double time_taken = (end_read.tv_sec - start_read.tv_sec) + (end_read.tv_nsec - start_read.tv_nsec) / NANO;
+    time_taken *= NANO;
+    printf("Time taken for %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
+
+    // Detatching shmids
+    shmdt((void *)mat1);
+    shmdt((void *)mat2);
+    shmdt((void *)flag1);
+    shmdt((void *)flag2);
 }
