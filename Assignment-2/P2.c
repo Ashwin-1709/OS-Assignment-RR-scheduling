@@ -35,6 +35,7 @@ void *compute(void *args) {
             if(!flag1[x] || !flag2[y]) 
                 continue;
             done++;
+            // printf("Computing %u %u\n" , x , y);
             // Compute dot product
             ll val = 0;
             for(int j = 0 ; j < M ; j++) 
@@ -76,12 +77,12 @@ int main(int argc , char* argv[]) {
     int thread_work = N * K  / MAX_THREADS , extra = N * K - thread_work * MAX_THREADS , cell = 0;
 
     // Getting shmids
-    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 | IPC_CREAT);
-    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 | IPC_CREAT);
+    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666);
+    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 );
+    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 );
+    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 );
 
-    printf("%d %d %d %d\n" , mat1_id , mat2_id , flag1_id , flag2_id);
+    // printf("%d %d %d %d\n" , mat1_id , mat2_id , flag1_id , flag2_id);
 
     // Attatching ids
     mat1 = shmat(mat1_id , NULL , 0);
@@ -111,7 +112,7 @@ int main(int argc , char* argv[]) {
     double time_taken = ( end_mul.tv_sec - start_mul.tv_sec ) + ( end_mul.tv_nsec - start_mul.tv_nsec ) / NANO;
     time_taken *= NANO;
 
-    printf("Time taken for %dx%d and %dx%d Matrix multiplication using %d threads : %lf" , N , M , M , K , MAX_THREADS , time_taken);
+    printf("Time taken for %dx%d and %dx%d Matrix multiplication using %d threads : %lf nanoseconds\n" , N , M , M , K , MAX_THREADS , time_taken);
     // Detatching shmids
     shmdt((void *)mat1);
     shmdt((void *)mat2);
