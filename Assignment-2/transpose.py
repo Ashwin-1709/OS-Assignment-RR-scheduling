@@ -1,6 +1,7 @@
 import numpy
+import sys
 
-matrix = numpy.genfromtxt('in2.txt')
+matrix = numpy.genfromtxt(sys.argv[1])
 
 transpose_matrix = numpy.array(matrix , dtype=int)
 transpose_matrix = transpose_matrix.T
