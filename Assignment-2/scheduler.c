@@ -22,8 +22,6 @@ int blocks[2];
 pid_t child[2];
 // Stores is i-th process done or not
 bool done[2] = { false , false };
-// Stores waiting time for P1 and P2u
-int wait_time[2];
 struct timespec start[2];
 struct timespec end[2];
 
@@ -40,7 +38,6 @@ bool round_robin_deque(int turn) {
     blocks[turn]++;
     if (status == -1) {
         done[turn] = true;
-        wait_time[turn] = blocks[turn ^ 1] * QUANTA;
         clock_gettime(CLOCK_REALTIME, &end[turn]);
         return false;
     }
@@ -116,14 +113,14 @@ int main(int argc, char* argv[]) {
     time_taken2 *= NANO;
     printf("TAT for P2 %lf\n", time_taken2);
 
-    printf("Waiting Time P1 %d\n", wait_time[0]);
-    printf("Waiting Time P2 %d\n", wait_time[1]);
+    printf("Waiting Time P1 %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000);
+    printf("Waiting Time P2 %lf ns\n", time_taken2 - blocks[1] * QUANTA * 1000000);
 
     printf("P1 executed for %d quantas\n", blocks[0]);
     printf("P2 executed for %d quantas\n", blocks[1]);
 
     printf("Total TAT %lf\n", time_taken1 + time_taken2);
-    printf("Context switch time for Process %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
+    printf("Total time spent in Context switches %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
 
     // remove shmids
     shmctl(mat1_id, IPC_RMID, 0);
