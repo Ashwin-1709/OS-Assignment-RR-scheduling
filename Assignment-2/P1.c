@@ -57,15 +57,6 @@ void* read_file(void* args) {
     pthread_exit(NULL);
 }
 
-void print_matrix(int row, int col, ll* mat) {
-    for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < col; ++j)
-            if (j == col - 1)
-                printf("%lld", mat[i * col + j]);
-            else printf("%lld ", mat[i * col + j]);
-        printf("\n");
-    }
-}
 
 int main(int argc, char* argv[]) {
     if (argc != 8) {
@@ -166,7 +157,7 @@ int main(int argc, char* argv[]) {
 
     double time_taken = (end_read.tv_sec - start_read.tv_sec) + (end_read.tv_nsec - start_read.tv_nsec) / NANO;
     time_taken *= NANO;
-    printf("Time taken for %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
+    printf("Time taken for reading | %lf nanoseconds\n",time_taken);
 
     // Detatching shmids
     shmdt((void*)mat1);
