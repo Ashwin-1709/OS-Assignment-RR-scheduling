@@ -15,13 +15,15 @@
 #define NANO 1e9
 typedef long long ll;
 
-int QUANTA = 2, N, M, K;
+int QUANTA = 1, N, M, K;
 // number of times process i comes in blocks[i]
-int blocks[2]; 
+int blocks[2];
 // stores PIDs of processes
 pid_t child[2];
 // Stores is i-th process done or not
 bool done[2] = { false , false };
+// Stores waiting time for P1 and P2u
+int wait_time[2];
 struct timespec start[2];
 struct timespec end[2];
 
@@ -38,6 +40,7 @@ bool round_robin_deque(int turn) {
     blocks[turn]++;
     if (status == -1) {
         done[turn] = true;
+        wait_time[turn] = blocks[turn ^ 1] * QUANTA;
         clock_gettime(CLOCK_REALTIME, &end[turn]);
         return false;
     }
@@ -45,9 +48,8 @@ bool round_robin_deque(int turn) {
 }
 
 bool round_robin_enqueue(int turn) {
-    if (!blocks[turn]) { //  First time being scheduled
+    if (!blocks[turn])  //  First time being scheduled
         clock_gettime(CLOCK_REALTIME, &start[turn]);
-    }
     int status = schedule_child(turn);
     if (status == -1)
         return false;
@@ -98,25 +100,31 @@ int main(int argc, char* argv[]) {
 
     int turn = 0;
     while (!done[0] || !done[1]) {
-        if (done[turn]) 
+        if (done[turn])
             turn ^= 1;
         round_robin_enqueue(turn);
         usleep(QUANTA * 1000);
         round_robin_deque(turn);
         turn ^= 1;
     }
-    
-    double time_taken = (end[0].tv_sec - start[0].tv_sec) + (end[0].tv_nsec - start[0].tv_nsec) / NANO;
-    time_taken *= NANO;
-    printf("Time taken for P1 %lf\n", time_taken);
-    
-    time_taken = (end[1].tv_sec - start[1].tv_sec) + (end[1].tv_nsec - start[1].tv_nsec) / NANO;
-    time_taken *= NANO;
-    printf("Time taken for P2 %lf\n", time_taken);
 
-    printf("blocks[0] = %d\n", blocks[0]);
-    printf("blocks[1] = %d\n", blocks[1]);
-    
+    double time_taken1 = (end[0].tv_sec - start[0].tv_sec) + (end[0].tv_nsec - start[0].tv_nsec) / NANO;
+    time_taken1 *= NANO;
+    printf("TAT for P1 %lf\n", time_taken1);
+
+    double time_taken2 = (end[1].tv_sec - start[1].tv_sec) + (end[1].tv_nsec - start[1].tv_nsec) / NANO;
+    time_taken2 *= NANO;
+    printf("TAT for P2 %lf\n", time_taken2);
+
+    printf("Waiting Time P1 %d\n", wait_time[0]);
+    printf("Waiting Time P2 %d\n", wait_time[1]);
+
+    printf("P1 executed for %d quantas\n", blocks[0]);
+    printf("P2 executed for %d quantas\n", blocks[1]);
+
+    printf("Total TAT %lf\n", time_taken1 + time_taken2);
+    printf("Context switch time for Process %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
+
     // remove shmids
     shmctl(mat1_id, IPC_RMID, 0);
     shmctl(mat2_id, IPC_RMID, 0);
