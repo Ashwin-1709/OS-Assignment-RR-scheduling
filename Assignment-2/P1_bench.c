@@ -12,8 +12,6 @@
 typedef long long ll;
 
 int N, M, K;
-// in1.txt -> N x M 
-// in2.txt -> M x K
 
 typedef struct {
     int col_cnt; // number of columns in matrix
@@ -38,6 +36,7 @@ void pre_process_input(int N, int M, ll* offset, FILE* fp) {
     fclose(fp);
 }
 
+// Threading function
 void* read_file(void* args) {
     thread_params* P = (thread_params*)args;
     int start = P->row_from, end = P->row_to;
@@ -58,18 +57,8 @@ void* read_file(void* args) {
     pthread_exit(NULL);
 }
 
-void print_matrix(int row, int col, ll** mat) {
-    for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < col; ++j)
-            if (j == col - 1)
-                printf("%lld", mat[i][j]);
-            else printf("%lld ", mat[i][j]);
-        printf("\n");
-    }
-}
-
 int main(int argc, char* argv[]) {
-    if (argc != 7) {
+    if (argc != 6) {
         printf("Invalid input!!!\n");
         exit(0);
     }
@@ -79,7 +68,6 @@ int main(int argc, char* argv[]) {
     K = atoi(argv[3]);
     FILE* fp1 = fopen(argv[4], "r");
     FILE* fp2 = fopen(argv[5], "r");
-    // int MAX_THREADS = atoi(argv[7]);
 
     ll* offset_1 = malloc(N * sizeof(ll));
     ll* offset_2 = malloc(K * sizeof(ll));
@@ -89,13 +77,13 @@ int main(int argc, char* argv[]) {
     int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 | IPC_CREAT);
     int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 | IPC_CREAT);
 
-    //printf("%d %d %d %d\n" , mat1_id , mat2_id , flag1_id , flag2_id);
-
     // Attatching ids
     mat1 = shmat(mat1_id , NULL , 0);
     mat2 = shmat(mat2_id , NULL , 0);
     flag1 = shmat(flag1_id , NULL , 0);
     flag2 = shmat(flag2_id , NULL , 0);
+    
+    // Generating benchmark csv
     FILE* csv_ptr = fopen("P1_data.csv", "w");
     fprintf(csv_ptr, "No.of threads, Time\n");
 
@@ -172,7 +160,7 @@ int main(int argc, char* argv[]) {
         time_taken *= NANO;
         
         fprintf(csv_ptr, "%d, %lf\n", MAX_THREADS, time_taken);
-        printf("Time taken for %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
+        printf("Time taken for reading using %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
     }
     fclose(csv_ptr);
 
@@ -182,6 +170,7 @@ int main(int argc, char* argv[]) {
     shmdt((void *)flag1);
     shmdt((void *)flag2);
 
+    // Removing shared memory after benchmark is over
     shmctl(mat1_id , IPC_RMID , 0);
     shmctl(mat2_id , IPC_RMID , 0);
     shmctl(flag1_id , IPC_RMID , 0);
