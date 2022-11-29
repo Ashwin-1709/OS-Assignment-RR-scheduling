@@ -4,9 +4,13 @@
 #include <pthread.h>
 #include <stdbool.h>    
 #include <time.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/ipc.h> 
+#include <sys/shm.h> 
+#include <assert.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h> 
+#include <errno.h>
 
 #define NANO 1E9
 
@@ -25,23 +29,33 @@ typedef struct {
 void *compute(void *args) {
     thread_params* P = (thread_params*)args;
     int done = 0;
-    while(done < P->sz) {
+    bool *vis = malloc(sizeof(bool) * P->sz);
+    for(int i = 0 ; i < P->sz ; i++)
+        vis[i] = false;
+    
+    while(true) {
+        int unvis = 0;
         for(int i = 0 ; i < P->sz ; i++) {
-            if(done == P->sz)
-                break;
-            uint x = P->cells[i] / K ;
-            uint y = P->cells[i] - (K * x);
+            if(!vis[i])
+                unvis++;
+            int x = P->cells[i] / K ;
+            int y = P->cells[i]  % K;
             int id = P->cells[i];
             if(!flag1[x] || !flag2[y]) 
                 continue;
-            done++;
-            // printf("Computing %u %u\n" , x , y);
+            // printf("Computing %u %u thread %ld\n" , x , y , pthread_self());
             // Compute dot product
+            if(vis[i])
+                continue;
             ll val = 0;
             for(int j = 0 ; j < M ; j++) 
                 val += mat1[M * x + j] * mat2[M * y + j];
+            // printf("thread %ld value %lld\n", pthread_self() , val);
             output[x][y] = val;
+            vis[i] = true;
         }
+        if(!unvis)
+            break;
     }
     pthread_exit(NULL);
 }
@@ -61,13 +75,12 @@ int main(int argc , char* argv[]) {
         printf("Invalid input!!!\n");
         exit(0);
     }
-
+    
     N = atoi(argv[1]);
     M = atoi(argv[2]);
     K = atoi(argv[3]);
     int MAX_THREADS = atoi(argv[4]);
     MAX_THREADS = (MAX_THREADS > N * K) ? N * K : MAX_THREADS; 
-    FILE* out = fopen(argv[5] , "w+");
 
     output = malloc(sizeof(ll*) * N);
     for(int i = 0 ; i < N ; i++)
@@ -120,10 +133,10 @@ int main(int argc , char* argv[]) {
     shmdt((void *)flag2);
 
     // remove shmids
-    shmctl(mat1_id , IPC_RMID , 0);
-    shmctl(mat2_id , IPC_RMID , 0);
-    shmctl(flag1_id , IPC_RMID , 0);
-    shmctl(flag2_id , IPC_RMID , 0);
+
+    // print_matrix(N , K , output);
+
+    FILE* out = fopen(argv[5] , "w+");
 
     for(int i = 0 ; i < N ; ++i) {
         for(int j = 0 ; j < K ; j++) {
@@ -135,6 +148,11 @@ int main(int argc , char* argv[]) {
     }
 
     fclose(out);
+
+    shmctl(mat1_id , IPC_RMID , 0);
+    shmctl(mat2_id , IPC_RMID , 0);
+    shmctl(flag1_id , IPC_RMID , 0);
+    shmctl(flag2_id , IPC_RMID , 0);
 
     return 0;
 }
