@@ -12,8 +12,6 @@
 typedef long long ll;
 
 int N, M, K;
-// in1.txt -> N x M 
-// in2.txt -> M x K
 
 typedef struct {
     int col_cnt; // number of columns in matrix
@@ -24,8 +22,8 @@ typedef struct {
     bool* flag; // set flag after reading the row
 } thread_params;
 
-bool* flag1, * flag2;
-ll* mat1, * mat2;
+bool* flag1, *flag2;
+ll* mat1, *mat2;
 
 void pre_process_input(int N, int M, ll* offset, FILE* fp) {
     for (int i = 0; i < N; ++i) {
@@ -38,6 +36,7 @@ void pre_process_input(int N, int M, ll* offset, FILE* fp) {
     fclose(fp);
 }
 
+// Threading function
 void* read_file(void* args) {
     thread_params* P = (thread_params*)args;
     int start = P->row_from, end = P->row_to;
@@ -58,12 +57,12 @@ void* read_file(void* args) {
     pthread_exit(NULL);
 }
 
-void print_matrix(int row, int col, ll** mat) {
+void print_matrix(int row, int col, ll* mat) {
     for (int i = 0; i < row; ++i) {
         for (int j = 0; j < col; ++j)
             if (j == col - 1)
-                printf("%lld", mat[i][j]);
-            else printf("%lld ", mat[i][j]);
+                printf("%lld", mat[i * col + j]);
+            else printf("%lld ", mat[i * col + j]);
         printf("\n");
     }
 }
@@ -83,19 +82,18 @@ int main(int argc, char* argv[]) {
 
     ll* offset_1 = malloc(N * sizeof(ll));
     ll* offset_2 = malloc(K * sizeof(ll));
-    
-    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 | IPC_CREAT);
-    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 | IPC_CREAT);
 
-    //printf("%d %d %d %d\n" , mat1_id , mat2_id , flag1_id , flag2_id);
+    // Allocating memory in shared memory
+    int mat1_id = shmget(1080, (N * M) * sizeof(ll), 0666 | IPC_CREAT);
+    int mat2_id = shmget(153, (K * M) * sizeof(ll), 0666 | IPC_CREAT);
+    int flag1_id = shmget(1892, (N) * sizeof(bool), 0666 | IPC_CREAT);
+    int flag2_id = shmget(2068, (K) * sizeof(bool), 0666 | IPC_CREAT);
 
     // Attatching ids
-    mat1 = shmat(mat1_id , NULL , 0);
-    mat2 = shmat(mat2_id , NULL , 0);
-    flag1 = shmat(flag1_id , NULL , 0);
-    flag2 = shmat(flag2_id , NULL , 0);
+    mat1 = shmat(mat1_id, NULL, 0);
+    mat2 = shmat(mat2_id, NULL, 0);
+    flag1 = shmat(flag1_id, NULL, 0);
+    flag2 = shmat(flag2_id, NULL, 0);
 
     // Preprocess in1.txt
     pre_process_input(N, M, offset_1, fp1);
@@ -171,8 +169,8 @@ int main(int argc, char* argv[]) {
     printf("Time taken for %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
 
     // Detatching shmids
-    shmdt((void *)mat1);
-    shmdt((void *)mat2);
-    shmdt((void *)flag1);
-    shmdt((void *)flag2);
+    shmdt((void*)mat1);
+    shmdt((void*)mat2);
+    shmdt((void*)flag1);
+    shmdt((void*)flag2);
 }
