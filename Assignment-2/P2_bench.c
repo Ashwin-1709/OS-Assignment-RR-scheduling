@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-
+#define MIN(a,b) (((a)<(b))?(a):(b))
 #define NANO 1E9
 
 typedef long long ll;
@@ -83,7 +83,7 @@ int main(int argc , char* argv[]) {
     flag1 = shmat(flag1_id , NULL , 0);
     flag2 = shmat(flag2_id , NULL , 0);
 
-    for (int MAX_THREADS = 1; MAX_THREADS <= (N * K) / 2; MAX_THREADS++) {
+    for (int MAX_THREADS = 1; MAX_THREADS <= MIN((N * K) / 2,5000); MAX_THREADS++) {
         MAX_THREADS = (MAX_THREADS > N * K) ? N * K : MAX_THREADS; 
         
         pthread_t threads[MAX_THREADS];
