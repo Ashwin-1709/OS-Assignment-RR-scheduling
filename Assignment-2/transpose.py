@@ -1,9 +1,24 @@
-import numpy
 import sys
 
-matrix = numpy.genfromtxt(sys.argv[1])
+n = int(sys.argv[2])
+m = int(sys.argv[3])
 
-transpose_matrix = numpy.array(matrix , dtype=int)
-transpose_matrix = transpose_matrix.T
+file = open(sys.argv[1], 'r')
+matrix = [list() for _ in range(n)]
+cnt = 0
+for i in file.readlines():
+    matrix[cnt] = list(map(int, i.split()))
+    cnt += 1
+file.close()
 
-numpy.savetxt('transpose.txt' , transpose_matrix , fmt = "%d")
+file = open('transpose.txt', 'w')
+ans = list()
+for i in range(m):
+    now = ''
+    for j in range(n):
+        now += str(matrix[j][i]) + ' '
+    now += '\n'
+    ans.append(now)
+
+file.writelines(ans)
+file.close()
