@@ -15,7 +15,7 @@
 #define NANO 1e9
 typedef long long ll;
 
-int QUANTA = 1, N, M, K;
+int QUANTA = 2, N, M, K;
 // number of times process i comes in blocks[i]
 int blocks[2];
 // stores PIDs of processes
