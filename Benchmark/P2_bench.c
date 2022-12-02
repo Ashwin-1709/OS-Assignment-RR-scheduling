@@ -13,13 +13,13 @@
 typedef long long ll;
 int N, M, K;
 
-bool *flag1 , *flag2; 
-ll *mat1 , *mat2;
-ll **output;
+bool* flag1, * flag2;
+ll* mat1, * mat2;
+ll** output;
 
 typedef struct {
     int sz;
-    uint* cells;
+    int* cells;
 }thread_params;
 
 void* compute(void* args) {
@@ -34,7 +34,7 @@ void* compute(void* args) {
         for (int i = 0; i < P->sz; ++i) {
             if (!vis[i])
                 unvis++;
-            
+
             int x = P->cells[i] / K;
             int y = P->cells[i] % K;
             int id = P->cells[i];
@@ -54,7 +54,7 @@ void* compute(void* args) {
     pthread_exit(NULL);
 }
 
-int main(int argc , char* argv[]) {
+int main(int argc, char* argv[]) {
     if (argc != 4) {
         printf("Invalid input!!!\n");
         exit(0);
@@ -68,64 +68,64 @@ int main(int argc , char* argv[]) {
     K = atoi(argv[3]);
 
     output = malloc(sizeof(ll*) * N);
-    for(int i = 0 ; i < N ; i++)
+    for (int i = 0; i < N; i++)
         output[i] = malloc(sizeof(ll) * K);
 
     // Getting shmids
-    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666);
-    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 );
-    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 );
-    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 );
+    int mat1_id = shmget(1080, (N * M) * sizeof(ll), 0666);
+    int mat2_id = shmget(153, (K * M) * sizeof(ll), 0666);
+    int flag1_id = shmget(1892, (N) * sizeof(bool), 0666);
+    int flag2_id = shmget(2068, (K) * sizeof(bool), 0666);
 
     // Attatching ids
-    mat1 = shmat(mat1_id , NULL , 0);
-    mat2 = shmat(mat2_id , NULL , 0);
-    flag1 = shmat(flag1_id , NULL , 0);
-    flag2 = shmat(flag2_id , NULL , 0);
+    mat1 = shmat(mat1_id, NULL, 0);
+    mat2 = shmat(mat2_id, NULL, 0);
+    flag1 = shmat(flag1_id, NULL, 0);
+    flag2 = shmat(flag2_id, NULL, 0);
 
-    for (int MAX_THREADS = 1; MAX_THREADS <= MIN((N * K) / 2,5000); MAX_THREADS++) {
-        MAX_THREADS = (MAX_THREADS > N * K) ? N * K : MAX_THREADS; 
-        
+    for (int MAX_THREADS = 1; MAX_THREADS <= MIN((N * K) / 2, 5000); MAX_THREADS++) {
+        MAX_THREADS = (MAX_THREADS > N * K) ? N * K : MAX_THREADS;
+
         pthread_t threads[MAX_THREADS];
-        int thread_work = N * K  / MAX_THREADS , extra = N * K - thread_work * MAX_THREADS , cell = 0;
+        int thread_work = N * K / MAX_THREADS, extra = N * K - thread_work * MAX_THREADS, cell = 0;
 
         struct timespec start_mul, end_mul;
         clock_gettime(CLOCK_REALTIME, &start_mul);
 
-        for(int i = 0 ; i < MAX_THREADS ; i++) {
+        for (int i = 0; i < MAX_THREADS; i++) {
             thread_params* P = malloc(sizeof(thread_params));
             P->sz = thread_work;
-            if(extra > 0)
+            if (extra > 0)
                 P->sz++;
-            P->cells = malloc(sizeof(uint) * P->sz);
-            for(int j = 0 ; j < P->sz ; j++) 
+            P->cells = malloc(sizeof(int) * P->sz);
+            for (int j = 0; j < P->sz; j++)
                 P->cells[j] = cell++;
             extra--;
-            pthread_create(&threads[i] , NULL , compute , (void *)P);
+            pthread_create(&threads[i], NULL, compute, (void*)P);
         }
 
-        for(int i = 0 ; i < MAX_THREADS ; i++)
-            pthread_join(threads[i] , NULL);
+        for (int i = 0; i < MAX_THREADS; i++)
+            pthread_join(threads[i], NULL);
 
         clock_gettime(CLOCK_REALTIME, &end_mul);
-        double time_taken = ( end_mul.tv_sec - start_mul.tv_sec ) + ( end_mul.tv_nsec - start_mul.tv_nsec ) / NANO;
+        double time_taken = (end_mul.tv_sec - start_mul.tv_sec) + (end_mul.tv_nsec - start_mul.tv_nsec) / NANO;
         time_taken *= NANO;
 
         fprintf(csv_ptr, "%d, %lf\n", MAX_THREADS, time_taken);
-        printf("Time taken for %dx%d and %dx%d Matrix multiplication using %d threads : %lf nanoseconds\n" , N , M , M , K , MAX_THREADS , time_taken);
+        // printf("Time taken for %dx%d and %dx%d Matrix multiplication using %d threads : %lf nanoseconds\n", N, M, M, K, MAX_THREADS, time_taken);
     }
-    
+
     // Detatching shmids
-    shmdt((void *)mat1);
-    shmdt((void *)mat2);
-    shmdt((void *)flag1);
-    shmdt((void *)flag2);
+    shmdt((void*)mat1);
+    shmdt((void*)mat2);
+    shmdt((void*)flag1);
+    shmdt((void*)flag2);
 
     // remove shmids
-    shmctl(mat1_id , IPC_RMID , 0);
-    shmctl(mat2_id , IPC_RMID , 0);
-    shmctl(flag1_id , IPC_RMID , 0);
-    shmctl(flag2_id , IPC_RMID , 0);
+    shmctl(mat1_id, IPC_RMID, 0);
+    shmctl(mat2_id, IPC_RMID, 0);
+    shmctl(flag1_id, IPC_RMID, 0);
+    shmctl(flag2_id, IPC_RMID, 0);
 
     fclose(csv_ptr);
 

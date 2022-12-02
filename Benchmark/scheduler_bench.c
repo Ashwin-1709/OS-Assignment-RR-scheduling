@@ -55,7 +55,7 @@ bool round_robin_enqueue(int turn) {
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 8) {
+    if (argc != 7) {
         printf("Invalid input format\n");
         return 0;
     }
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
             break;
         case 0: // child
             kill(getpid(), SIGSTOP);
-            execl("P1.out", "./P1.out", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], NULL);
+            execl("P1.out", "./P1.out", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], "12", NULL);
             break;
 
         default:
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
                     break;
                 case 0:
                     kill(getpid(), SIGSTOP);
-                    execl("P2.out", "./P2.out", argv[1], argv[2], argv[3], argv[7], argv[6], NULL);
+                    execl("P2.out", "./P2.out", argv[1], argv[2], argv[3], "12", argv[6], NULL);
                     break;
                 default:
                     break;

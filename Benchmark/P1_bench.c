@@ -71,18 +71,18 @@ int main(int argc, char* argv[]) {
 
     ll* offset_1 = malloc(N * sizeof(ll));
     ll* offset_2 = malloc(K * sizeof(ll));
-    
-    int mat1_id = shmget(1080 , (N * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int mat2_id = shmget(153 , (K * M) * sizeof(ll) , 0666 | IPC_CREAT);
-    int flag1_id = shmget(1892 , (N) * sizeof(bool) , 0666 | IPC_CREAT);
-    int flag2_id = shmget(2068 , (K) * sizeof(bool) , 0666 | IPC_CREAT);
+
+    int mat1_id = shmget(1080, (N * M) * sizeof(ll), 0666 | IPC_CREAT);
+    int mat2_id = shmget(153, (K * M) * sizeof(ll), 0666 | IPC_CREAT);
+    int flag1_id = shmget(1892, (N) * sizeof(bool), 0666 | IPC_CREAT);
+    int flag2_id = shmget(2068, (K) * sizeof(bool), 0666 | IPC_CREAT);
 
     // Attatching ids
-    mat1 = shmat(mat1_id , NULL , 0);
-    mat2 = shmat(mat2_id , NULL , 0);
-    flag1 = shmat(flag1_id , NULL , 0);
-    flag2 = shmat(flag2_id , NULL , 0);
-    
+    mat1 = shmat(mat1_id, NULL, 0);
+    mat2 = shmat(mat2_id, NULL, 0);
+    flag1 = shmat(flag1_id, NULL, 0);
+    flag2 = shmat(flag2_id, NULL, 0);
+
     // Generating benchmark csv
     FILE* csv_ptr = fopen("P1_data.csv", "w");
     fprintf(csv_ptr, "No.of threads, Time\n");
@@ -158,21 +158,21 @@ int main(int argc, char* argv[]) {
 
         double time_taken = (end_read.tv_sec - start_read.tv_sec) + (end_read.tv_nsec - start_read.tv_nsec) / NANO;
         time_taken *= NANO;
-        
+
         fprintf(csv_ptr, "%d, %lf\n", MAX_THREADS, time_taken);
-        printf("Time taken for reading using %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
+        // printf("Time taken for reading using %d threads | %lf nanoseconds\n", MAX_THREADS, time_taken);
     }
     fclose(csv_ptr);
 
     // Detatching shmids
-    shmdt((void *)mat1);
-    shmdt((void *)mat2);
-    shmdt((void *)flag1);
-    shmdt((void *)flag2);
+    shmdt((void*)mat1);
+    shmdt((void*)mat2);
+    shmdt((void*)flag1);
+    shmdt((void*)flag2);
 
     // Removing shared memory after benchmark is over
-    shmctl(mat1_id , IPC_RMID , 0);
-    shmctl(mat2_id , IPC_RMID , 0);
-    shmctl(flag1_id , IPC_RMID , 0);
-    shmctl(flag2_id , IPC_RMID , 0);
+    shmctl(mat1_id, IPC_RMID, 0);
+    shmctl(mat2_id, IPC_RMID, 0);
+    shmctl(flag1_id, IPC_RMID, 0);
+    shmctl(flag2_id, IPC_RMID, 0);
 }

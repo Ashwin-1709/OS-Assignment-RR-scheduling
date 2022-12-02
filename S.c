@@ -55,7 +55,7 @@ bool round_robin_enqueue(int turn) {
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 8) {
+    if (argc != 7) {
         printf("Invalid input format\n");
         return 0;
     }
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
             break;
         case 0: // child
             kill(getpid(), SIGSTOP);
-            execl("P1.out", "./P1.out", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], NULL);
+            execl("P1.out", "./P1.out", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], "12", NULL);
             break;
 
         default:
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
                     break;
                 case 0:
                     kill(getpid(), SIGSTOP);
-                    execl("P2.out", "./P2.out", argv[1], argv[2], argv[3], argv[7], argv[6], NULL);
+                    execl("P2.out", "./P2.out", argv[1], argv[2], argv[3], "12", argv[6], NULL);
                     break;
                 default:
                     break;
@@ -107,11 +107,11 @@ int main(int argc, char* argv[]) {
 
     double time_taken1 = (end[0].tv_sec - start[0].tv_sec) + (end[0].tv_nsec - start[0].tv_nsec) / NANO;
     time_taken1 *= NANO;
-    printf("TAT for P1 %lf\n", time_taken1);
+    printf("TAT for P1 %lf ns\n", time_taken1);
 
     double time_taken2 = (end[1].tv_sec - start[1].tv_sec) + (end[1].tv_nsec - start[1].tv_nsec) / NANO;
     time_taken2 *= NANO;
-    printf("TAT for P2 %lf\n", time_taken2);
+    printf("TAT for P2 %lf ns\n", time_taken2);
 
     printf("Waiting Time P1 %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000);
     printf("Waiting Time P2 %lf ns\n", time_taken2 - blocks[1] * QUANTA * 1000000);
@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
     printf("P1 executed for %d quantas\n", blocks[0]);
     printf("P2 executed for %d quantas\n", blocks[1]);
 
-    printf("Total TAT %lf\n", time_taken1 + time_taken2);
-    printf("Total time spent in Context switches %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
+    printf("Total TAT %lf ns\n", time_taken1 + time_taken2);
+    printf("Total time spent in Context switches %lf ns\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
 
     // remove shmids
     shmctl(mat1_id, IPC_RMID, 0);
