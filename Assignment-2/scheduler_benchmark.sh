@@ -14,7 +14,7 @@ do
 
 python3 MatrixGen2.py $n $m $k
 
-python3 transpose.py matrix2.txt
+python3 transpose.py matrix2.txt $m $k
 gcc P1.c -o P1.out -lpthread
 gcc P2.c -o P2.out -lpthread
 gcc scheduler_bench.c -o scheduler_bench.out -lpthread

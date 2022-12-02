@@ -6,7 +6,7 @@
 
 python3 MatrixGen.py
 
-python3 transpose.py matrix2.txt
+python3 transpose.py matrix2.txt $2 $3
 gcc P1.c -o P1.out -lpthread
 gcc P2.c -o P2.out -lpthread
 gcc scheduler.c -o scheduler.out -lpthread
