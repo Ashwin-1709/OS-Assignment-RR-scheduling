@@ -134,11 +134,5 @@ int main(int argc, char* argv[]) {
 
     fclose(out);
 
-    // remove shmids
-    shmctl(mat1_id, IPC_RMID, 0);
-    shmctl(mat2_id, IPC_RMID, 0);
-    shmctl(flag1_id, IPC_RMID, 0);
-    shmctl(flag2_id, IPC_RMID, 0);
-
     return 0;
 }

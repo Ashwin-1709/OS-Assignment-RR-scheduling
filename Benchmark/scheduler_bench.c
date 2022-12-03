@@ -15,7 +15,7 @@
 #define NANO 1e9
 typedef long long ll;
 
-int QUANTA = 1, N, M, K;
+int QUANTA = 2, N, M, K;
 // number of times process i comes in blocks[i]
 int blocks[2];
 // stores PIDs of processes
@@ -69,11 +69,13 @@ int main(int argc, char* argv[]) {
     int flag2_id = shmget(2068, (K) * sizeof(bool), 0666 | IPC_CREAT);
     FILE* turn_ptr = fopen("turnaround.csv", "a+");
     FILE* wait_ptr = fopen("wait.csv", "a+");
+    FILE* context_ptr = fopen("context_2.csv", "a+");
     fseek(turn_ptr, 0, SEEK_END);
     int size = ftell(turn_ptr);
     if (size == 0) {
         fprintf(turn_ptr, "Workload size, Turnaround time P1, Turnaround time P2\n");
         fprintf(wait_ptr, "Workload size, Waiting time P1, Waiting time P2\n");
+        fprintf(context_ptr, "Workload size, Context switch time\n");
     }
 
     // Prevents child to become a zombie process
@@ -115,23 +117,25 @@ int main(int argc, char* argv[]) {
 
     double time_taken1 = (end[0].tv_sec - start[0].tv_sec) + (end[0].tv_nsec - start[0].tv_nsec) / NANO;
     time_taken1 *= NANO;
-    printf("TAT for P1 %lf\n", time_taken1);
+    // printf("TAT for P1 %lf\n", time_taken1);
 
     double time_taken2 = (end[1].tv_sec - start[1].tv_sec) + (end[1].tv_nsec - start[1].tv_nsec) / NANO;
     time_taken2 *= NANO;
-    printf("TAT for P2 %lf\n", time_taken2);
+    // printf("TAT for P2 %lf\n", time_taken2);
 
-    printf("Waiting Time P1 %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000);
-    printf("Waiting Time P2 %lf ns\n", time_taken2 - blocks[1] * QUANTA * 1000000);
-    printf("Total waiting time %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000 + time_taken2 - blocks[1] * QUANTA * 1000000);
+    // printf("Waiting Time P1 %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000);
+    // printf("Waiting Time P2 %lf ns\n", time_taken2 - blocks[1] * QUANTA * 1000000);
+    // printf("Total waiting time %lf ns\n", time_taken1 - blocks[0] * QUANTA * 1000000 + time_taken2 - blocks[1] * QUANTA * 1000000);
 
-    printf("P1 executed for %d quantas\n", blocks[0]);
-    printf("P2 executed for %d quantas\n", blocks[1]);
+    // printf("P1 executed for %d quantas\n", blocks[0]);
+    // printf("P2 executed for %d quantas\n", blocks[1]);
 
-    printf("Total TAT %lf\n", time_taken1 + time_taken2);
+    // printf("Total TAT %lf\n", time_taken1 + time_taken2);
     fprintf(turn_ptr, "%lld, %lf, %lf\n", (ll)N * M * K, time_taken1, time_taken2);
     fprintf(wait_ptr, "%lld, %lf, %lf\n", (ll)N * M * K, time_taken1 - blocks[0] * QUANTA * (ll)1000000, time_taken2 - blocks[1] * QUANTA * (ll)1000000);
-    printf("Total time spent in Context switches %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
+    // printf("Total time spent in Context switches %lf\n", time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
+
+    fprintf(context_ptr, "%lld, %lf\n", (ll)N * M * K, time_taken1 + time_taken2 - QUANTA * (blocks[0] + blocks[1]) * 1E6);
 
     fclose(turn_ptr);
     fclose(wait_ptr);
